@@ -4,7 +4,7 @@ import urllib
 import json
 import csv
 import time
-
+import random
 
 from datetime import date, timedelta
 from collections import namedtuple
@@ -521,6 +521,26 @@ class Admin:
         jresult = json.loads(response)        
         return jresult["folders"]
 
+    def randomizeToGroup(self,query,num,groupid):
+
+        catalog=self.AGOLCatalog(query)
+
+        random.shuffle(catalog)
+        num=int(num)
+        gallery=[]
+        i=0
+        for r in catalog:
+            i=i+1
+            gallery.append(r)
+            if i>=num:
+                break
+
+            
+        self.clearGroup(groupid)
+        self.shareItems(gallery,groupid)
+
+        return None
+
     def clearGroup(self, groupid):
         '''
         Unshare all content from the specified group.
@@ -528,7 +548,6 @@ class Admin:
         '''
         groupcatalog = self.AGOLGroupCatalog(groupid)
 
-        sItems=''
         for f in groupcatalog:
             requestToDelete = self.user.portalUrl + '/sharing/rest/content/items/' + f.id + "/unshare?groups=" + groupid
 
@@ -542,6 +561,31 @@ class Admin:
             jresult = json.loads(response)     
 
         print "Complete."
+        return None
+
+
+
+        #sItems=''
+        #for f in groupcatalog:
+        #    sItems=sItems + f.id + "," 
+
+        #l=len(sItems)-1
+        #sItems=sItems[:l]
+        #requestToDelete = self.user.portalUrl + '/sharing/rest/content/users/' + self.user.username + "/unshareItems"
+        #parameters = urllib.urlencode({
+        #        'token' : self.user.token,
+        #        'groups' : groupid,
+        #        'items' : sItems,
+        #        'f' : 'json'})
+        
+           
+        #print "Unsharing items..."
+
+        #response = urllib.urlopen(requestToDelete,parameters).read()
+
+        #jresult = json.loads(response)     
+
+        #print "Complete."
         return None
 
     def clearFolder(self, folderid):
