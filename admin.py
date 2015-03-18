@@ -354,11 +354,19 @@ class Admin:
             if (i < len(items)): 
                 sWebMapIDs = sWebMapIDs + ","
          
+            v.sharedgroups=self._getSharing(v)
+
+            #todo...
+            groups=v.sharedgroups
+            groupids=''
+            for group in groups:
+                groupids += str(group) +"," 
+            groupids += groupid
+
             requestToShare= self.user.portalUrl + '/sharing/rest/content/items/' + v.id + '/share' 
             parameters = urllib.urlencode({'token' : self.user.token,
-                                           'everyone':False,
-                                           'account':False,
-                                           'groups' : groupid,
+                                           'everyone':True,
+                                           'groups' : groupids,
                                             'f' : 'json'})
 
             response = urllib.urlopen(requestToShare, parameters ).read()
@@ -987,6 +995,7 @@ class Admin:
             self.searchURL = self.user.portalUrl  + "/sharing/rest" 
             self.viewURL = self.user.portalUrl  + "/home/item.html?id="
 
+        query=str(query).replace('&quot','"')
         self.query = query
 
         pList=[]
@@ -1017,6 +1026,8 @@ class Admin:
             if r.size== -1:
                 r.size=0
             r.size = self._getSize(r)
+            
+
             r.myRowID = len(allResults) + 1;
             allResults.append(r)
 
@@ -1067,6 +1078,36 @@ class Admin:
             result=0
 
         return result
+
+    def _getSharing(self, v):
+        '''
+        Issue query for item sharing.
+        '''
+
+        print ("fetching sharing for " + v.title + " (" + v.type + ")")
+
+          #have to get ownerFolder
+        parameters = urllib.urlencode({'token' : self.user.token, 'f': 'json'})
+        requestForInfo = self.user.portalUrl + '/sharing/rest/content/items/' + v.id
+ 
+        response = urllib.urlopen(requestForInfo, parameters ).read()
+
+        jResult = json.loads(response)
+
+        if('error' in jResult):
+            print str(i)  + ') ' + v.title + " (" + v.id + ") was not found and will be skipped." 
+        else:
+            if jResult['ownerFolder']:
+                folderID = jResult['ownerFolder']
+            else:
+                folderID = ''
+
+        requestForInfo2 = self.user.portalUrl + '/sharing/rest/content/users/' + v.owner + '/' + folderID + '/items/' + v.id 
+        response2 = urllib.urlopen(requestForInfo2, parameters ).read()
+        jResult2 = json.loads(response2)
+
+        return jResult2["sharing"]["groups"]
+
 
     def _getOrgID(self):
         '''
