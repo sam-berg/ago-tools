@@ -1,7 +1,8 @@
 #### calculate a field for feature layer indicating presence of attachments
+#### calculate URL to attachment optionally
 
 #### example:
-#### flagAttachment.py -u <username> -p <password> -flagField NUMATTACHMENTS -layerURL http://services.arcgis.com/XWaQZrOGjgrsZ6Cu/arcgis/rest/services/Towns/FeatureServer/0  -portal http://yourorg.maps.arcgis.com
+#### flagAttachment.py -u <username> -p <password> -flagField NUMATTACHMENTS -urlField URL -layerURL http://services.arcgis.com/XWaQZrOGjgrsZ6Cu/arcgis/rest/services/Towns/FeatureServer/0  -portal http://yourorg.maps.arcgis.com
 
 import csv
 import argparse
@@ -34,6 +35,7 @@ parser.add_argument('-p', '--password')
 parser.add_argument('-layerURL', '--layerURL')
 parser.add_argument('-layerID', '--layerID')
 parser.add_argument('-flagField', '--flagField')
+parser.add_argument('-urlField', '--urlField')
 parser.add_argument('-portal', '--portal')
 
 args = parser.parse_args()
@@ -57,5 +59,5 @@ if (args.layerID==None and args.layerURL==None):
 if args.layerID!=None:
     args.layerURL=agoAdmin.getLayerURL(args.layerID)
 
-agoAdmin.calculateAttachmentCount(args.layerURL,args.flagField)
+agoAdmin.calculateAttachmentCount(args.layerURL,args.flagField, args.urlField)
 
