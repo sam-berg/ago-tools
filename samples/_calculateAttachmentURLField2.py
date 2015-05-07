@@ -1,8 +1,9 @@
 #### calculate URL to attachment field
 
 args={}
-args["portal"]=''
-args["urlField"]= ''
+args["portal"]='http://arcgis.com'
+args["picURLField"]= 'PIC_URL'
+args["thumbURLField"]= 'THUMB_URL'
 args["layerID"]=''
 args["user"] =''
 args["password"] =''
@@ -60,7 +61,7 @@ class Admin:
 
         params = urllib.urlencode({'token' : self.user.token,
                             'f' : 'json'})
-        #print 'Getting Info for: ' + webmapId
+
         #Get the item data
         
         reqUrl = self.user.portalUrl + '/sharing/rest/content/items/' + layerId  + "?" + params
@@ -78,7 +79,7 @@ class Admin:
         return sURL        
     
 
-    def _calculateAttachmentURL(self,layerURL,urlField):
+    def _calculateAttachmentURL(self,layerURL,urlField,urlField2):
 
         #get objectIDs
         parameters = urllib.urlencode({'token' : self.user.token})
@@ -113,7 +114,8 @@ class Admin:
                 #write attachment count
 
                 if( bHasAttachments):
-                    sPost = '[{"attributes":{"OBJECTID":' + str(oid) + ',"' + urlField + '":"' + firstAttachmentURL + '"}}]'
+                    #sPost = '[{"attributes":{"OBJECTID":' + str(oid) + ',"' + urlField + '":"' + firstAttachmentURL + '"}}]'
+                    sPost = '[{"attributes":{"OBJECTID":' + str(oid) + ',"' + urlField + '":"' + firstAttachmentURL + '","' + urlField2 + '":"' + firstAttachmentURL + '"}}]'
                 
                     updateFeaturesRequest=layerURL + "/updateFeatures"
 
@@ -124,8 +126,8 @@ class Admin:
                     responseUpdate = urllib.urlopen(updateFeaturesRequest,parametersUpdate ).read()
                     a=responseUpdate
 
-        except:
-            e=1
+        except ValueError, e:
+            e2=e;
      
 
         return None
@@ -141,5 +143,5 @@ agoAdmin = Admin(args["user"],args["portal"],args["password"])
 
 args["layerURL"]=agoAdmin.getLayerURL(args["layerID"])
 
-agoAdmin._calculateAttachmentURL(args["layerURL"],args["urlField"])
+agoAdmin._calculateAttachmentURL(args["layerURL"],args["picURLField"],args["thumbURLField"])
 
