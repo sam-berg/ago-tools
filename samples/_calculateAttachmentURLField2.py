@@ -1,9 +1,6 @@
-#### calculate the URL to the first attachment found for each feature in the layer
-#### designated by the layer ID
-#### enter the portal, URL field to populate, the ArcGIS Layer ID, and
-#### user and password
+#### calculate URL to attachment field
 
-#### update args values below:
+args={}
 args["portal"]=''
 args["urlField"]= ''
 args["layerID"]=''
@@ -98,7 +95,7 @@ class Admin:
             
             #iterate through features
             for oid in oidList:
-                aQuery=layerURL + "/"+str(oid) + "/attachments?f=json"
+                aQuery=layerURL + "/" + str(oid) + "/attachments?f=json"
 
                 #determine attachment count
                 responseAttachments = urllib.urlopen(aQuery,parameters ).read()
@@ -111,7 +108,7 @@ class Admin:
 
                 if(aCount>0):
                     bHasAttachments=True
-                    firstAttachmentURL=layerURL + "/"+str(oid) + "/attachments" + "/" + str(jAttachresult['attachmentInfos'][0]['id'])
+                    firstAttachmentURL=layerURL + "/" + str(oid) + "/attachments" + "/" + str(jAttachresult['attachmentInfos'][0]['id'])
 
                 #write attachment count
 
@@ -132,6 +129,11 @@ class Admin:
      
 
         return None
+
+
+
+
+
 
 args["portal"] = str(args["portal"]).replace("http://","https://")
 
