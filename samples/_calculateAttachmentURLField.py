@@ -1,4 +1,4 @@
-#### calculate URL to attachment field
+﻿#### calculate URL to attachment field
 
 #### example:
 ####  -u <username> -p <password> -urlField URL -layerID 3233sdf2334334ff -portal http://yourorg.maps.arcgis.com
@@ -121,8 +121,8 @@ class Admin:
                     responseUpdate = urllib.urlopen(updateFeaturesRequest,parametersUpdate ).read()
                     a=responseUpdate
 
-        except:
-            e=1
+        except ee:
+            e=ee
      
 
         return None

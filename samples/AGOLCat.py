@@ -1,4 +1,4 @@
-#### Generate a CSV listing the items in the organization
+﻿#### Generate a CSV listing the items in the organization
 #### Optionally include a query using ArcGIS Portal API syntax (http://resources.arcgis.com/en/help/arcgis-rest-api/02r3/02r3000000mn000000.htm)
 #### Optionally return the size of the item (requires additional API request for each item, default is False)
 #### The results will include every item accessible by the credentials provided
@@ -90,7 +90,7 @@ catalog= agoAdmin.AGOLCatalog(args.query,bIncludeSize)
 
 with open(args.file, 'wb') as output:
     # Write header row.
-    output.write("id,owner,created,modified,name,title,type,typeKeywords,description,tags,snippet,thumbnail,extent,spatialReference,accessInformation,licenseInfo,culture,url,access,size,listed,numComments,numRatings,avgRatings,numViews,itemURL\n")
+    output.write("id,owner,created,modified,name,title,type,typeKeywords,description,tags,snippet,thumbnail,extent,spatialReference,accessInformation,licenseInfo,culture,url,access,size,listed,numComments,numRatings,avgRatings,numViews,itemURL,thumbnailUrl\n")
     # Write item data.
     for r in catalog:
         s=''
@@ -140,7 +140,8 @@ with open(args.file, 'wb') as output:
         s += getResultValue(r.numViews) + ","
 
 
-        s += getResultValue(r.itemURL);
+        s += getResultValue(r.itemURL) + ",";
+        s += getResultValue(r.thumbnailUrl);
         s+="\n"
 
         output.writelines(s)

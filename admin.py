@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+﻿#!/usr/bin/env python
 
 import urllib
 import json
@@ -444,7 +444,7 @@ class Admin:
         optionally to a specific folder.
         '''
         self.servicesToRegister=mapservices
-
+        allresults=[]
         if folder==None:
             folder=''
 
@@ -455,8 +455,10 @@ class Admin:
 
             sURL=ms.url
             sTitle=ms.title
-            if ms.thumbnail==None:
+            if ms.thumbnailUrl==None:
                 sThumbnail ='http://static.arcgis.com/images/desktopapp.png' 
+            elif ms.thumbnailUrl != None:
+                sThumbnail=ms.thumbnailUrl
             elif ms.id !=None:
                 sThumbnail ="http://www.arcgis.com/sharing/content/items/" + ms.id + "/info/" + ms.thumbnail
             else:
@@ -476,11 +478,12 @@ class Admin:
 
             parameters = urllib.urlencode({'URL' : sURL,
                                            'title' : sTitle,
-                                           'thumbnailURL' : sThumbnail,
+                                           'thumbnailurl' : sThumbnail,
                                            'tags' : sTags, 
                                            'description' : sDescription,
                                            'snippet': sSnippet,
                                            'extent':sExtent,
+                                           'overwrite':True,
                                            'spatialReference':sSpatialReference,
                                            'accessInformation': sAccessInfo,
                                            'licenseInfo': sLicenseInfo,
@@ -501,11 +504,15 @@ class Admin:
 
                     if jresult["success"]:
                         icount=icount+1
+                        ms.id=jresult["id"]
+                        ms.ownerFolder=jresult["folder"]
+                        allresults.append(ms)
 
             except:
                 print str(i) + ") "  + ms.title + ':error!'
 
         print str(icount) + " item(s) added."
+        return allresults
 
     def getFolderID(self, folderName):
         '''
@@ -972,7 +979,7 @@ class Admin:
         sCatalogURL = self.user.portalUrl + "/sharing/rest/content/users/" + self.user.username + folder
         return self.AGOLCatalog(None,None,sCatalogURL)
 
-    def AGOLCatalog(self, query=None, includeSize=False, sCatalogURL=None):
+    def AGOLCatalog(self, query=None, includeSize=False, sCatalogURL=None, bRestrictToOrg=False):
         '''
         Return all items from all users in a portal, optionally matching a 
         specified query.
@@ -987,7 +994,10 @@ class Admin:
         self.sFullSearch = ""
         self.bIncludeSize=includeSize
 
-        self.orgID = self._getOrgID()
+        if bRestrictToOrg:
+            self.orgID = self._getOrgID()
+        else:
+            self.orgID=None
 
         self.catalogURL=sCatalogURL #for cataloging folders
 
@@ -1027,6 +1037,7 @@ class Admin:
                 r.size=0
             r.size = self._getSize(r)
             
+            r.thumbnailUrl = self._fixThumbnail(r)
 
             r.myRowID = len(allResults) + 1;
             allResults.append(r)
@@ -1044,7 +1055,7 @@ class Admin:
                 num = jresult['num']
                 start =jresult['start']
 
-                pList = AGOLItems( jresult['results'])
+                pList = AGOLItems( jresult[sItemsProperty])
                 for r in pList.AGOLItems_list:
                     r.itemURL = self.viewURL + r.id
                     r.created = time.strftime("%Y-%m-%d",time.gmtime(r.created/1000))
@@ -1053,10 +1064,23 @@ class Admin:
                         r.size=0
                         r.size = self._getSize(r)
                     r.myRowID = len(allResults) + 1;
-
+                    r.thumbnailUrl = self._fixThumbnail(r)
                     allResults.append(r)
 
         return allResults
+
+    def _fixThumbnail(self,r):
+        
+        #self.user.portalUrl
+        #+/sharing/rest/content/items
+        #+/id
+        #+/info/thumbnail/
+        #+thumbnail
+        r2=self.user.portalUrl + "/sharing/rest/content/items/" + r.id + "/info/" + r.thumbnail
+        #SBTEST r2=r2 + "?token=" + self.user.token
+
+         
+        return r2
 
     def _getSize(self, r):
         '''
@@ -1101,8 +1125,10 @@ class Admin:
                 folderID = jResult['ownerFolder']
             else:
                 folderID = ''
+        sUser=v.owner
+        sUser=self.user.username
 
-        requestForInfo2 = self.user.portalUrl + '/sharing/rest/content/users/' + v.owner + '/' + folderID + '/items/' + v.id 
+        requestForInfo2 = self.user.portalUrl + '/sharing/rest/content/users/' + sUser + '/' + folderID + '/items/' + v.id 
         response2 = urllib.urlopen(requestForInfo2, parameters ).read()
         jResult2 = json.loads(response2)
 
