@@ -74,7 +74,8 @@ class Admin:
         return sURL        
     
 
-    def _calculateAttachmentURL(self,layerURL,urlField,oidField):
+    def _calculateAttachmentURL(self,layerURL,urlField,oidField,thumbnailField,webDir):
+        #(args.layerURL,args.urlField,sOIDField,sThumbnailField,args.webDir)
 
         #get objectIDs
         parameters = urllib.urlencode({'token' : self.user.token})
@@ -105,11 +106,10 @@ class Admin:
                 if(aCount>0):
                     bHasAttachments=True
                     firstAttachmentURL=layerURL + "/"+str(oid) + "/attachments" + "/" + str(jAttachresult['attachmentInfos'][0]['id'])
-
-                #write attachment count
+                    thumbnailPath = webDir + str(jAttachresult['attachmentInfos'][0]['name'])
 
                 if( bHasAttachments):
-                    sPost = '[{"attributes":{"' + oidField +'":' + str(oid) + ',"' + urlField + '":"' + firstAttachmentURL + '"}}]'
+                    sPost = '[{"attributes":{"' + oidField +'":' + str(oid) + ',"' + urlField + '":"' + firstAttachmentURL + '","' + thumbnailField + '":"' + thumbnailPath +  '"}}]'
                     updateFeaturesRequest=layerURL + "/updateFeatures"
 
                     parametersUpdate = urllib.urlencode({'f':'json','token' : self.user.token,'features':sPost})
@@ -121,9 +121,9 @@ class Admin:
                     a=responseUpdate
                     print str(a)
 
-        except ee:
-            e=ee
-     
+        except :
+            e=sys.exc_info()[0]
+            print str(e)
 
         return None
 
@@ -154,6 +154,8 @@ parser.add_argument('-p', '--password')
 parser.add_argument('-portal', '--portal')
 parser.add_argument('-layerID', '--layerID')
 parser.add_argument('-urlField', '--urlField')
+parser.add_argument('-thumbnailField', '--thumbnailField')
+parser.add_argument('-webDir', '--webDir')
 parser.add_argument('-OIDField', '--OIDField')
 
 args = parser.parse_args()
@@ -174,6 +176,9 @@ if (args.layerID==None):
 if (args.urlField==None):
     args.urlField = _raw_input("URL Fieldname: ")
 
+if (args.webDir==None):
+    args.webDir = _raw_input("Web Directory: ")
+
 sOIDField="OBJECTID"
 if (args.OIDField!=None):
     sOIDField = args.OIDField
@@ -181,5 +186,10 @@ if (args.OIDField!=None):
 args.layerURL=agoAdmin.getLayerURL(args.layerID)
 print "layerURL: " + str(args.layerURL)
 
-agoAdmin._calculateAttachmentURL(args.layerURL,args.urlField,sOIDField)
+sThumbnailField = "thumb_url"
+if (args.thumbnailField!=None):
+    sThumbnailField = args.thumbnailField
+
+
+agoAdmin._calculateAttachmentURL(args.layerURL,args.urlField,sOIDField,sThumbnailField,args.webDir)
 
