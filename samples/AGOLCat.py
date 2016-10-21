@@ -57,7 +57,6 @@ def getResultValue(s):
             return str(sResult)
     except:
         return ''
-
 parser = argparse.ArgumentParser()
 parser.add_argument('-u', '--user')
 parser.add_argument('-p', '--password')
