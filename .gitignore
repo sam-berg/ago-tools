@@ -10,3 +10,5 @@ UpgradeLog.htm
 *.bat
 VHBCatPortal_GISData_MA.csv
 *.csv
+/samples/_calculateRelatedAttachmentURLFieldThumbnail.zip
+/samples/_calculateAttachmentURLFieldThumbnail - Copy.py

@@ -50,6 +50,8 @@ def getResultValue(s):
         return ''
     try:
         sResult = str(s)
+        sResult=sResult.replace("\n","")
+        sResult=sResult.replace("\xa","")
         if(sResult.find(",")>0 or sResult.find("\r\n")>0):
             sResult = sResult.replace("\"", "\"\"")
             return "\"" + str(sResult) + "\""
@@ -75,6 +77,9 @@ if args.user == None:
 
 if args.portal == None:
     args.portal = _raw_input("Portal: ")
+
+if args.query == None:
+    args.query = ""
 
 args.portal = str(args.portal).replace("http://","https://")
 

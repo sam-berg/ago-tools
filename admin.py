@@ -979,7 +979,7 @@ class Admin:
         sCatalogURL = self.user.portalUrl + "/sharing/rest/content/users/" + self.user.username + folder
         return self.AGOLCatalog(None,None,sCatalogURL)
 
-    def AGOLCatalog(self, query=None, includeSize=False, sCatalogURL=None, bRestrictToOrg=False):
+    def AGOLCatalog(self, query=None, includeSize=False, sCatalogURL=None, bRestrictToOrg=True):
         '''
         Return all items from all users in a portal, optionally matching a 
         specified query.
@@ -1076,7 +1076,13 @@ class Admin:
         #+/id
         #+/info/thumbnail/
         #+thumbnail
-        r2=self.user.portalUrl + "/sharing/rest/content/items/" + r.id + "/info/" + r.thumbnail
+        if(r==None):
+          return ''
+
+        r2=''
+        
+        if(r.id and r.thumbnail):
+          r2=self.user.portalUrl + "/sharing/rest/content/items/" + r.id + "/info/" + r.thumbnail
         #SBTEST r2=r2 + "?token=" + self.user.token
 
          
@@ -1086,22 +1092,28 @@ class Admin:
         '''
         Issue query for item size.
         '''
-        if(self.bIncludeSize != True):
-            return 0
+        try:
+          if(self.bIncludeSize != True):
+              return 0
 
-        print ("fetching size for " + r.title + " (" + r.type + ")")
+          if(r.title and r.type):
+            print ("now fetching size for " + r.title + " (" + r.type + ")")
 
-        result=0
-        sURL = self.searchURL + "/content/items/" + str(r.id) + "?f=json&token=" + self.user.token;
+          result=0
+          sURL = self.searchURL + "/content/items/" + str(r.id) + "?f=json&token=" + self.user.token;
 
-        response = urllib.urlopen(sURL).read()
-        result = json.loads(response)['size']
-        if(result>0):
-            result = result/1024
-        else:
-            result=0
+          response = urllib.urlopen(sURL).read()
+          result = json.loads(response)['size']
+          if(result>0):
+              result = result/1024
+          else:
+              result=0
 
-        return result
+          return result
+
+        except Exception as e:
+          print("_getSize error: " + e.message)
+          return 0
 
     def _getSharing(self, v):
         '''

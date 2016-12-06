@@ -1,7 +1,12 @@
-﻿#### calculate URL to attachment field
+#### calculate URL to attachment field
 
-#### example:
-####  -u <username> -p <password> -urlField URL -layerID 3233sdf2334334ff -portal http://yourorg.maps.arcgis.com
+args={}
+args["portal"]='http://arcgis.com'
+args["picURLField"]= 'PIC_URL'
+args["thumbURLField"]= 'THUMB_URL'
+args["layerID"]=''
+args["user"] =''
+args["password"] =''
 
 import csv
 import argparse
@@ -56,7 +61,7 @@ class Admin:
 
         params = urllib.urlencode({'token' : self.user.token,
                             'f' : 'json'})
-        #print 'Getting Info for: ' + webmapId
+
         #Get the item data
         
         reqUrl = self.user.portalUrl + '/sharing/rest/content/items/' + layerId  + "?" + params
@@ -74,12 +79,11 @@ class Admin:
         return sURL        
     
 
-    def _calculateAttachmentURL(self,layerURL,urlField,oidField,thumbnailField,Query):
-        #(args.layerURL,args.urlField,sOIDField,sThumbnailField,args.webDir)
+    def _calculateAttachmentURL(self,layerURL,urlField,urlField2):
 
         #get objectIDs
         parameters = urllib.urlencode({'token' : self.user.token})
-        query = "/query?where={}&returnIdsOnly=true&f=json".format(Query)
+        query = "/query?where={}&returnIdsOnly=true&f=json".format("0=0")
         
         requestString = layerURL + query
         
@@ -92,7 +96,7 @@ class Admin:
             
             #iterate through features
             for oid in oidList:
-                aQuery=layerURL + "/"+str(oid) + "/attachments?f=json"
+                aQuery=layerURL + "/" + str(oid) + "/attachments?f=json"
 
                 #determine attachment count
                 responseAttachments = urllib.urlopen(aQuery,parameters ).read()
@@ -102,16 +106,17 @@ class Admin:
                 aCount = len(jAttachresult["attachmentInfos"])
                 bHasAttachments=False
                 firstAttachmentURL=''
-                secondAttachmentURL=''
 
-                if(aCount>=2):
-                  #use first two attachments
+                if(aCount>0):
                     bHasAttachments=True
-                    firstAttachmentURL=layerURL + "/"+str(oid) + "/attachments" + "/" + str(jAttachresult['attachmentInfos'][0]['id'])
-                    secondAttachmentURL = layerURL + "/"+str(oid) + "/attachments" + "/" + str(jAttachresult['attachmentInfos'][1]['id'])
+                    firstAttachmentURL=layerURL + "/" + str(oid) + "/attachments" + "/" + str(jAttachresult['attachmentInfos'][0]['id'])
+
+                #write attachment count
 
                 if( bHasAttachments):
-                    sPost = '[{"attributes":{"' + oidField +'":' + str(oid) + ',"' + urlField + '":"' + firstAttachmentURL + '","' + thumbnailField + '":"' + secondAttachmentURL +  '"}}]'
+                    #sPost = '[{"attributes":{"OBJECTID":' + str(oid) + ',"' + urlField + '":"' + firstAttachmentURL + '"}}]'
+                    sPost = '[{"attributes":{"OBJECTID":' + str(oid) + ',"' + urlField + '":"' + firstAttachmentURL + '","' + urlField2 + '":"' + firstAttachmentURL + '"}}]'
+                
                     updateFeaturesRequest=layerURL + "/updateFeatures"
 
                     parametersUpdate = urllib.urlencode({'f':'json','token' : self.user.token,'features':sPost})
@@ -119,79 +124,24 @@ class Admin:
                     print "writing attachment url for feature " + str(oid)
 
                     responseUpdate = urllib.urlopen(updateFeaturesRequest,parametersUpdate ).read()
-
                     a=responseUpdate
-                    print str(a)
 
-        except :
-            e=sys.exc_info()[0]
-            print str(e)
+        except ValueError, e:
+            e2=e;
+     
 
         return None
 
 
-def _raw_input(prompt=None, stream=None, input=None):
-    # A raw_input() replacement that doesn't save the string in the
-    # GNU readline history.
-    if not stream:
-        stream = sys.stderr
-    if not input:
-        input = sys.stdin
-    prompt = str(prompt)
-    if prompt:
-        stream.write(prompt)
-        stream.flush()
-    # NOTE: The Python C API calls flockfile() (and unlock) during readline.
-    line = input.readline()
-    if not line:
-        raise EOFError
-    if line[-1] == '\n':
-        line = line[:-1]
-    return line
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-u', '--user')
-parser.add_argument('-p', '--password')
-parser.add_argument('-portal', '--portal')
-parser.add_argument('-layerID', '--layerID')
-parser.add_argument('-urlField', '--urlField')
-parser.add_argument('-thumbnailField', '--thumbnailField')
-parser.add_argument('-query', '--query')
-parser.add_argument('-OIDField', '--OIDField')
-
-args = parser.parse_args()
-
-if args.user == None:
-    args.user = _raw_input("Username:")
-
-if args.portal == None:
-    args.portal = _raw_input("Portal: ")
-
-args.portal = str(args.portal).replace("http://","https://")
-
-agoAdmin = Admin(args.user,args.portal,args.password)
-
-if (args.layerID==None):
-    args.layerID = _raw_input("layerID: ")
-
-if (args.htmlField==None):
-    args.htmlField = _raw_input("HTML Fieldname: ")
-
-if (args.query==None):
-    args.query = _raw_input("Query: ")
-
-sOIDField="OBJECTID"
-if (args.OIDField!=None):
-    sOIDField = args.OIDField
-
-args.layerURL=agoAdmin.getLayerURL(args.layerID)
-print "layerURL: " + str(args.layerURL)
-
-sThumbnailField = "thumb_url"
-if (args.thumbnailField!=None):
-    sThumbnailField = args.thumbnailField
 
 
-agoAdmin._calculateAttachmentURL(args.layerURL,args.urlField,sOIDField,sThumbnailField,args.query)
+args["portal"] = str(args["portal"]).replace("http://","https://")
+
+agoAdmin = Admin(args["user"],args["portal"],args["password"])
+
+args["layerURL"]=agoAdmin.getLayerURL(args["layerID"])
+
+agoAdmin._calculateAttachmentURL(args["layerURL"],args["picURLField"],args["thumbURLField"])
 

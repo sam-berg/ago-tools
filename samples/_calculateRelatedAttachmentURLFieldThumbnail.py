@@ -74,12 +74,14 @@ class Admin:
         return sURL        
     
 
-    def _calculateAttachmentURL(self,layerURL,urlField,oidField,thumbnailField,Query):
+    def _calculateRelatedAttachmentURL(self,layerURL,htmlField,oidField):
         #(args.layerURL,args.urlField,sOIDField,sThumbnailField,args.webDir)
+
+        relLayerURL='http://services1.arcgis.com/9lDFdeC4JIBgML6L/arcgis/rest/services/NNIS_Monitor5/FeatureServer/1'
 
         #get objectIDs
         parameters = urllib.urlencode({'token' : self.user.token})
-        query = "/query?where={}&returnIdsOnly=true&f=json".format(Query)
+        query = "/query?where={}&returnIdsOnly=false&outFields=*&f=json".format("0=0")
         
         requestString = layerURL + query
         
@@ -88,40 +90,49 @@ class Admin:
             responseOID = urllib.urlopen(requestString,parameters ).read()
 
             jresult = json.loads(responseOID)
-            oidList=jresult["objectIds"]
+            oidList=jresult["features"]
             
             #iterate through features
-            for oid in oidList:
-                aQuery=layerURL + "/"+str(oid) + "/attachments?f=json"
-
-                #determine attachment count
-                responseAttachments = urllib.urlopen(aQuery,parameters ).read()
-                print "reading attachments for feature " + str(oid)
+            for f in oidList:
                 
-                jAttachresult = json.loads(responseAttachments)
-                aCount = len(jAttachresult["attachmentInfos"])
-                bHasAttachments=False
-                firstAttachmentURL=''
-                secondAttachmentURL=''
+                #get related records
+                #query
+                relQuery= "/query?where={}&returnIdsOnly=true&f=json".format(str("RelLink") + "= '" + str(f["attributes"]["GlobalID"]) + "'")
+                relQuery=relLayerURL + relQuery
+                responseRelated = urllib.urlopen(relQuery,parameters ).read()
+                jRelResult = json.loads(responseRelated)
+                relCount = len(jRelResult["objectIds"])
 
-                if(aCount>=2):
-                  #use first two attachments
-                    bHasAttachments=True
-                    firstAttachmentURL=layerURL + "/"+str(oid) + "/attachments" + "/" + str(jAttachresult['attachmentInfos'][0]['id'])
-                    secondAttachmentURL = layerURL + "/"+str(oid) + "/attachments" + "/" + str(jAttachresult['attachmentInfos'][1]['id'])
+                for oid2 in jRelResult["objectIds"]:
 
-                if( bHasAttachments):
-                    sPost = '[{"attributes":{"' + oidField +'":' + str(oid) + ',"' + urlField + '":"' + firstAttachmentURL + '","' + thumbnailField + '":"' + secondAttachmentURL +  '"}}]'
-                    updateFeaturesRequest=layerURL + "/updateFeatures"
+                  aQuery=relLayerURL + "/"+str(oid2) + "/attachments?f=json"
 
-                    parametersUpdate = urllib.urlencode({'f':'json','token' : self.user.token,'features':sPost})
+                  #determine attachment count
+                  responseAttachments = urllib.urlopen(aQuery,parameters ).read()
+                  print "reading attachments for feature " + str(oid2)
+                
+                  jAttachresult = json.loads(responseAttachments)
+                  aCount = len(jAttachresult["attachmentInfos"])
+                  bHasAttachments=False
+                  firstAttachmentURL=''
+
+                  if(aCount>0):
+                      bHasAttachments=True
+                      firstAttachmentURL=relLayerURL + "/"+str(oid2) + "/attachments" + "/" + str(jAttachresult['attachmentInfos'][0]['id'])
+                      #thumbnailPath = webDir + str(jAttachresult['attachmentInfos'][0]['name'])
+
+                  if( bHasAttachments):
+                      sPost = '[{"attributes":{"' + oidField +'":' + str(f["attributes"][oidField]) + ',"' + htmlField + '":"' + firstAttachmentURL + '"}}]'
+                      updateFeaturesRequest=layerURL + "/updateFeatures"
+
+                      parametersUpdate = urllib.urlencode({'f':'json','token' : self.user.token,'features':sPost})
        
-                    print "writing attachment url for feature " + str(oid)
+                      print "writing attachment url for feature " + str(f["attributes"][oidField])
 
-                    responseUpdate = urllib.urlopen(updateFeaturesRequest,parametersUpdate ).read()
+                      responseUpdate = urllib.urlopen(updateFeaturesRequest,parametersUpdate ).read()
 
-                    a=responseUpdate
-                    print str(a)
+                      a=responseUpdate
+                      print str(a)
 
         except :
             e=sys.exc_info()[0]
@@ -155,9 +166,7 @@ parser.add_argument('-u', '--user')
 parser.add_argument('-p', '--password')
 parser.add_argument('-portal', '--portal')
 parser.add_argument('-layerID', '--layerID')
-parser.add_argument('-urlField', '--urlField')
-parser.add_argument('-thumbnailField', '--thumbnailField')
-parser.add_argument('-query', '--query')
+parser.add_argument('-htmlField', '--htmlField')
 parser.add_argument('-OIDField', '--OIDField')
 
 args = parser.parse_args()
@@ -178,9 +187,6 @@ if (args.layerID==None):
 if (args.htmlField==None):
     args.htmlField = _raw_input("HTML Fieldname: ")
 
-if (args.query==None):
-    args.query = _raw_input("Query: ")
-
 sOIDField="OBJECTID"
 if (args.OIDField!=None):
     sOIDField = args.OIDField
@@ -188,10 +194,6 @@ if (args.OIDField!=None):
 args.layerURL=agoAdmin.getLayerURL(args.layerID)
 print "layerURL: " + str(args.layerURL)
 
-sThumbnailField = "thumb_url"
-if (args.thumbnailField!=None):
-    sThumbnailField = args.thumbnailField
 
-
-agoAdmin._calculateAttachmentURL(args.layerURL,args.urlField,sOIDField,sThumbnailField,args.query)
+agoAdmin._calculateRelatedAttachmentURL(args.layerURL,args.htmlField,sOIDField)
 
