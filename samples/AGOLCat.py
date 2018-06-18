@@ -51,7 +51,7 @@ def getResultValue(s):
     try:
         sResult = str(s)
         sResult=sResult.replace("\n","")
-        sResult=sResult.replace("\xa","")
+        #SBTEST sResult=sResult.replace("\xa","")
         if(sResult.find(",")>0 or sResult.find("\r\n")>0):
             sResult = sResult.replace("\"", "\"\"")
             return "\"" + str(sResult) + "\""
@@ -66,6 +66,7 @@ parser.add_argument('-q', '--query')
 parser.add_argument('-file', '--file')
 parser.add_argument('-portal', '--portal')
 parser.add_argument('-size', '--bIncludeSize')
+parser.add_argument('-history', '--bIncludeHistory')
 
 args = parser.parse_args()
 
@@ -79,22 +80,26 @@ if args.portal == None:
     args.portal = _raw_input("Portal: ")
 
 if args.query == None:
-    args.query = ""
+    args.query = _raw_input("Query: ")
 
 args.portal = str(args.portal).replace("http://","https://")
 
 bIncludeSize=False
+bIncludeHistory=False
 
 if (args.bIncludeSize != None) and (args.bIncludeSize.upper() == "TRUE"):
     bIncludeSize=True
 
+if (args.bIncludeHistory != None) and (args.bIncludeHistory.upper() == "TRUE"):
+    bIncludeHistory=True
+
 agoAdmin = Admin(args.user,args.portal,args.password)
 
-catalog= agoAdmin.AGOLCatalog(args.query,bIncludeSize)
+catalog= agoAdmin.AGOLCatalog(args.query,bIncludeSize,None,None,bIncludeHistory)
 
 with open(args.file, 'wb') as output:
     # Write header row.
-    output.write("id,owner,created,modified,name,title,type,typeKeywords,description,tags,snippet,thumbnail,extent,spatialReference,accessInformation,licenseInfo,culture,url,access,size,listed,numComments,numRatings,avgRatings,numViews,itemURL,thumbnailUrl\n")
+    output.write("id,owner,created,modified,name,title,type,typeKeywords,description,tags,snippet,thumbnail,extent,spatialReference,accessInformation,licenseInfo,culture,url,access,size,listed,numComments,numRatings,avgRatings,numViews,itemURL,thumbnailUrl,creator,history\n")
     # Write item data.
     for r in catalog:
         s=''
@@ -145,7 +150,16 @@ with open(args.file, 'wb') as output:
 
 
         s += getResultValue(r.itemURL) + ",";
-        s += getResultValue(r.thumbnailUrl);
+        s += getResultValue(r.thumbnailUrl) + ",";
+
+        if hasattr( r,'previousCreator'):
+            s += getResultValue(r.previousCreator) + ","
+        else:
+            s+= getResultValue("") + ","
+        if hasattr(r,'history'):
+            s += getResultValue(r.history) 
+        else:
+            s += getResultValue("")
         s+="\n"
 
         output.writelines(s)

@@ -1,5 +1,4 @@
 ﻿#!/usr/bin/env python
-
 import urllib
 import json
 import csv
@@ -34,16 +33,17 @@ class Admin:
         '''
         if not roles:
             roles = ['org_admin', 'org_publisher', 'org_user']
-            #roles = ['org_admin', 'org_publisher', 'org_author', 'org_viewer'] # new roles to support Dec 2013 update
+            #roles = ['org_admin', 'org_publisher', 'org_author', 'org_viewer']
+            ## new roles to support Dec 2013 update
         allUsers = []
         users = self.__users__()
         for user in users['users']:
-            if user['role'] in roles and date.fromtimestamp(float(user['created'])/1000) > date.today()-timedelta(days=daysToCheck):
+            if user['role'] in roles and date.fromtimestamp(float(user['created']) / 1000) > date.today() - timedelta(days=daysToCheck):
                 allUsers.append(user)
         while users['nextStart'] > 0:
             users = self.__users__(users['nextStart'])
             for user in users['users']:
-                if user['role'] in roles and date.fromtimestamp(float(user['created'])/1000) > date.today()-timedelta(days=daysToCheck):
+                if user['role'] in roles and date.fromtimestamp(float(user['created']) / 1000) > date.today() - timedelta(days=daysToCheck):
                     allUsers.append(user)
         return allUsers
 
@@ -53,16 +53,18 @@ class Admin:
         Add organization users to multiple groups and return a list of the status
         '''
         # Provide one or more usernames in a list.
-        # e.g. ['user_1', 'user_2']
+        # e.g.  ['user_1', 'user_2']
         # Provide one or more group IDs in a list.
-        # e.g. ['d93aabd856f8459a8905a5bd434d4d4a', 'f84c841a3dfc4591b1ff83281ea5025f']
+        # e.g.  ['d93aabd856f8459a8905a5bd434d4d4a',
+        # 'f84c841a3dfc4591b1ff83281ea5025f']
 
         toolSummary = []
 
         # Assign users to the specified group(s).
         parameters = urllib.urlencode({'token': self.user.token, 'f': 'json'})
         for group in groups:
-            # Add Users - REQUIRES POST method (undocumented operation as of 2013-11-12).
+            # Add Users - REQUIRES POST method (undocumented operation as of
+            # 2013-11-12).
             response = urllib.urlopen(self.user.portalUrl + '/sharing/rest/community/groups/' + group + '/addUsers?', 'users=' + ','.join(users) + "&" + parameters).read()
             # Users not added will be reported back with each group.
             toolSummary.append({group: json.loads(response)})
@@ -78,12 +80,14 @@ class Admin:
         '''
 
         # request user content for userFrom
-        # response contains list of items in root folder and list of all folders
+        # response contains list of items in root folder and list of all
+        # folders
         parameters = urllib.urlencode({'token': self.user.token, 'f': 'json'})
         request = self.user.portalUrl + '/sharing/rest/content/users/' + userFrom + '?' + parameters
         userContent = json.loads(urllib.urlopen(request).read())
 
-        # create same folders in userTo's account like those in userFrom's account
+        # create same folders in userTo's account like those in userFrom's
+        # account
         for folder in userContent['folders']:
             parameters2 = urllib.urlencode({'title' : folder['title'], 'token': self.user.token, 'f': 'json'})
             request2 = self.user.portalUrl + '/sharing/rest/content/users/' + userTo + '/createFolder?'
@@ -109,7 +113,8 @@ class Admin:
             folderContent = json.loads(urllib.urlopen(request4).read())
             numberOfFolders += 1
 
-            # change ownership of items in CURRENT folder to userTo and put in correct folder
+            # change ownership of items in CURRENT folder to userTo and put in
+            # correct folder
             for item in folderContent['items']:
                 parameters5 = urllib.urlencode({'targetUsername' : userTo, 'targetFoldername' : folder['title'], 'token': self.user.token, 'f': 'pjson'})
                 request5 = self.user.portalUrl + '/sharing/rest/content/users/' + userFrom + '/' + folder['id'] + '/items/' + item['id'] + '/reassign?'
@@ -117,7 +122,7 @@ class Admin:
                 numberOfItems += 1
 
         # summarize results
-        print '    ' + str(numberOfItems) + ' ITEMS in ' + str(numberOfFolders) + ' FOLDERS (incl. Home folder) copied'
+        print(str(numberOfItems) + ' ITEMS in ' + str(numberOfFolders) + ' FOLDERS (incl. Home folder) copied')
         print '        from USER ' + userFrom + ' to USER ' + userTo
 
         return
@@ -138,7 +143,8 @@ class Admin:
         userFromContent = json.loads(response)
         print 'RECEIVED!'
 
-        # Determine if userFrom is group owner and, if so, transfer ownership to userTo
+        # Determine if userFrom is group owner and, if so, transfer ownership
+        # to userTo
         print 'Checking groups...',
         for group in userFromContent['groups']:
             print '.',
@@ -173,7 +179,8 @@ class Admin:
         response = urllib.urlopen(request).read()
         userFromContent = json.loads(response)
 
-        # Add userTo to each group that userFrom's is a member, but not an owner
+        # Add userTo to each group that userFrom's is a member, but not an
+        # owner
         for group in userFromContent['groups']:
             groups += 1
             if group['owner'] == userFrom:
@@ -186,8 +193,8 @@ class Admin:
                     groupsAdded += 1
 
         print '    CHECKED ' + str(groups) + ' groups associated with ' + userFrom + ':'
-        print '        ' + userFrom +  ' OWNS ' + str(groupsOwned) + ' groups (' + userTo + ' NOT added).'
-        print '        ' + userTo + ' is already a MEMBER of ' + str(groups-groupsOwned-groupsAdded) + ' groups.'
+        print '        ' + userFrom + ' OWNS ' + str(groupsOwned) + ' groups (' + userTo + ' NOT added).'
+        print '        ' + userTo + ' is already a MEMBER of ' + str(groups - groupsOwned - groupsAdded) + ' groups.'
         print '        ' + userTo + ' was ADDED to ' + str(groupsAdded) + ' groups.'
 
         return
@@ -244,24 +251,24 @@ class Admin:
         '''
         Fetches catalog of items in portal. If there is no thumbnail, assigns the default.
         '''
-        if(folder!=None):
+        if(folder != None):
             catalog = self.AGOLUserCatalog(folder,False)
         else:
-            catalog=self.AGOLCatalog(None)
+            catalog = self.AGOLCatalog(None)
 
         for r in catalog:
-            if(r.thumbnail==None):
+            if(r.thumbnail == None):
                 parameters = urllib.urlencode({'thumbnailURL' : 'http://static.arcgis.com/images/desktopapp.png', 'token' : self.user.token, 'f' : 'json'})
 
-                requestToUpdate = self.user.portalUrl + '/sharing/rest/content/users/' + self.user.username  + '/items/' +r.id + '/update'
+                requestToUpdate = self.user.portalUrl + '/sharing/rest/content/users/' + self.user.username + '/items/' + r.id + '/update'
 
                 try:
                     print ("updating " + r.title + " with thumbnail.")
-                    response = urllib.urlopen(requestToUpdate, parameters ).read()
+                    response = urllib.urlopen(requestToUpdate, parameters).read()
 
                     jresult = json.loads(response)
                 except:
-                    e=1
+                    e = 1
 
         return None
 
@@ -277,40 +284,42 @@ class Admin:
         
         try:
             print ("retrieving OBJECTIDs...")
-            responseOID = urllib.urlopen(requestString,parameters ).read()
+            responseOID = urllib.urlopen(requestString,parameters).read()
 
             jresult = json.loads(responseOID)
-            oidList=jresult["objectIds"]
+            oidList = jresult["objectIds"]
             
             #iterate through features
             for oid in oidList:
-                aQuery=layerURL + "/"+str(oid) + "/attachments?f=json"
+                aQuery = layerURL + "/" + str(oid) + "/attachments?f=json"
 
                 #determine attachment count
-                responseAttachments = urllib.urlopen(aQuery,parameters ).read()
+                responseAttachments = urllib.urlopen(aQuery,parameters).read()
                 print "reading attachments for feature " + str(oid)
                 
                 jAttachresult = json.loads(responseAttachments)
                 aCount = len(jAttachresult["attachmentInfos"])
-                bHasAttachments=False
-                if(aCount>0):
-                    bHasAttachments=True
+                bHasAttachments = False
+                if(aCount > 0):
+                    bHasAttachments = True
 
                 #write attachment count
-                #sPost = '[{"attributes":{"OBJECTID":' + str(oid) + ',"NUMATTACHMENTS":' + str(aCount) +"}}]"
-                #sPost = '[{"attributes":{"OBJECTID":' + str(oid) + ',"' + flagField + '":' + str(aCount) +"}}]"
-                sPost = '[{"attributes":{"OBJECTID":' + str(oid) + ',"' + flagField + '":"' + str(bHasAttachments) +'"}}]'
-                updateFeaturesRequest=layerURL + "/updateFeatures"
+                #sPost = '[{"attributes":{"OBJECTID":' + str(oid) +
+                #',"NUMATTACHMENTS":' + str(aCount) +"}}]"
+                #sPost = '[{"attributes":{"OBJECTID":' + str(oid) + ',"' +
+                #flagField + '":' + str(aCount) +"}}]"
+                sPost = '[{"attributes":{"OBJECTID":' + str(oid) + ',"' + flagField + '":"' + str(bHasAttachments) + '"}}]'
+                updateFeaturesRequest = layerURL + "/updateFeatures"
 
                 parametersUpdate = urllib.urlencode({'f':'json','token' : self.user.token,'features':sPost})
        
                 print "writing " + str(aCount) + " attachment count for feature " + str(oid)
 
-                responseUpdate = urllib.urlopen(updateFeaturesRequest,parametersUpdate ).read()
-                a=responseUpdate
+                responseUpdate = urllib.urlopen(updateFeaturesRequest,parametersUpdate).read()
+                a = responseUpdate
 
         except:
-            e=1
+            e = 1
 
         
 
@@ -320,7 +329,7 @@ class Admin:
 
         return None
 
-    def shareItems (self, items,groupid):
+    def shareItems(self, items,groupid):
         '''
         http://www.arcgis.com/sharing/rest/content/users/jsmith/shareItems
         everyone: false
@@ -331,8 +340,10 @@ class Admin:
 
         '''
 
-        #requestToShare= self.user.portalUrl + '/sharing/rest/content/users/' + self.user.username + '/shareItems'
-        #requestToShare= self.user.portalUrl + '/sharing/rest/content/items/shareItems'
+        #requestToShare= self.user.portalUrl + '/sharing/rest/content/users/' +
+        #self.user.username + '/shareItems'
+        #requestToShare= self.user.portalUrl +
+        #'/sharing/rest/content/items/shareItems'
 
         '''
         parameters = urllib.urlencode({'token' : self.user.token,
@@ -346,135 +357,138 @@ class Admin:
         jresult = json.loads(response)
         '''
 
-        sWebMapIDs=''
-        i=0
+        sWebMapIDs = ''
+        i = 0
         for v in items:
-            i = i +1
+            i = i + 1
             sWebMapIDs = sWebMapIDs + v.id
             if (i < len(items)): 
                 sWebMapIDs = sWebMapIDs + ","
          
-            v.sharedgroups=self._getSharing(v)
+            v.sharedgroups = self._getSharing(v)
 
             #todo...
-            groups=v.sharedgroups
-            groupids=''
+            groups = v.sharedgroups
+            groupids = ''
             for group in groups:
-                groupids += str(group) +"," 
+                groupids += str(group) + "," 
             groupids += groupid
 
-            requestToShare= self.user.portalUrl + '/sharing/rest/content/items/' + v.id + '/share' 
+            requestToShare = self.user.portalUrl + '/sharing/rest/content/items/' + v.id + '/share' 
             parameters = urllib.urlencode({'token' : self.user.token,
                                            'everyone':True,
                                            'groups' : groupids,
                                             'f' : 'json'})
 
-            response = urllib.urlopen(requestToShare, parameters ).read()
+            response = urllib.urlopen(requestToShare, parameters).read()
 
             jresult = json.loads(response)
 
             l = len(jresult['notSharedWith'])
-            bSuccess=True
-            if(l==0):
-                bSuccess=True
+            bSuccess = True
+            if(l == 0):
+                bSuccess = True
             else:
-                bSuccess=False
+                bSuccess = False
 
             if(bSuccess):
-                print str(i)  + ') ' + v.title + " (" + jresult["itemId"] + ") was shared."
+                print str(i) + ') ' + v.title + " (" + jresult["itemId"] + ") was shared."
             else:
-                print str(i)  + ') ' + v.title + " (" + jresult["itemId"] + ") could not be shared, or was already shared with this group." 
+                print str(i) + ') ' + v.title + " (" + jresult["itemId"] + ") could not be shared, or was already shared with this group." 
    
         return
         
-    def deleteItems (self, items):
+    def deleteItems(self, items):
 
-        sWebMapIDs=''
-        i=0
+        sWebMapIDs = ''
+        i = 0
         for v in items:
-            i = i +1
+            i = i + 1
             sWebMapIDs = sWebMapIDs + v.id
             if (i < len(items)): 
                 sWebMapIDs = sWebMapIDs + ","
 
-            #requestToDelete = self.user.portalUrl + '/sharing/rest/content/users/' + v.owner + '/items/' +  v.id + '/delete'
+            #requestToDelete = self.user.portalUrl +
+            #'/sharing/rest/content/users/' + v.owner + '/items/' + v.id +
+            #'/delete'
 
             #have to get ownerFolder
             parameters = urllib.urlencode({'token' : self.user.token, 'f': 'json'})
             requestForInfo = self.user.portalUrl + '/sharing/rest/content/items/' + v.id
  
-            response = urllib.urlopen(requestForInfo, parameters ).read()
+            response = urllib.urlopen(requestForInfo, parameters).read()
 
             jResult = json.loads(response)
 
             if('error' in jResult):
-                print str(i)  + ') ' + v.title + " (" + v.id + ") was not found and will be skipped." 
+                print str(i) + ') ' + v.title + " (" + v.id + ") was not found and will be skipped." 
             else:
 
-                folderID=str(jResult['ownerFolder'])
+                folderID = str(jResult['ownerFolder'])
 
                 requestToDelete = self.user.portalUrl + '/sharing/rest/content/users/' + v.owner + '/' + folderID + '/items/' + v.id + '/delete'
             
 
 
-                #parameters = urllib.urlencode({'token' : self.user.token, 'f': 'json'})
+                #parameters = urllib.urlencode({'token' : self.user.token, 'f':
+                #'json'})
                 parameters = urllib.urlencode({'token' : self.user.token, 'f': 'json','items':v.id})
  
  
-                response = urllib.urlopen(requestToDelete, parameters ).read()
+                response = urllib.urlopen(requestToDelete, parameters).read()
 
                 jResult = json.loads(response)
 
-                bSuccess=False
+                bSuccess = False
                 try:
                     if('success' in jResult):
-                        bSuccess=True
+                        bSuccess = True
                 except:
-                    bSuccess=False
+                    bSuccess = False
 
                 if(bSuccess):
-                    print str(i)  + ') ' + v.title + " (" + v.id + ") was deleted."
+                    print str(i) + ') ' + v.title + " (" + v.id + ") was deleted."
                 else:
-                    print str(i)  + ') ' + v.title + " (" + v.id + ") could not be deleted, or was already unaccessible." 
+                    print str(i) + ') ' + v.title + " (" + v.id + ") could not be deleted, or was already unaccessible." 
     
        
-    def registerItems (self, mapservices, folder=''):
+    def registerItems(self, mapservices, folder=''):
         '''
         Given a set of AGOL items, register them to the portal,
         optionally to a specific folder.
         '''
-        self.servicesToRegister=mapservices
-        allresults=[]
-        if folder==None:
-            folder=''
+        self.servicesToRegister = mapservices
+        allresults = []
+        if folder == None:
+            folder = ''
 
-        icount=0
-        i=0
+        icount = 0
+        i = 0
         for ms in self.servicesToRegister.service_list:
-            i = i +1
+            i = i + 1
 
-            sURL=ms.url
-            sTitle=ms.title
-            if ms.thumbnailUrl==None:
-                sThumbnail ='http://static.arcgis.com/images/desktopapp.png' 
+            sURL = ms.url
+            sTitle = ms.title
+            if ms.thumbnailUrl == None:
+                sThumbnail = 'http://static.arcgis.com/images/desktopapp.png' 
             elif ms.thumbnailUrl != None:
-                sThumbnail=ms.thumbnailUrl
-            elif ms.id !=None:
-                sThumbnail ="http://www.arcgis.com/sharing/content/items/" + ms.id + "/info/" + ms.thumbnail
+                sThumbnail = ms.thumbnailUrl
+            elif ms.id != None:
+                sThumbnail = "http://www.arcgis.com/sharing/content/items/" + ms.id + "/info/" + ms.thumbnail
             else:
-                sThumbnail='http://static.arcgis.com/images/desktopapp.png' 
+                sThumbnail = 'http://static.arcgis.com/images/desktopapp.png' 
 
             #todo, handle map service exports
 
-            sTags = 'mapping' if ms.tags==None else ms.tags
-            sType= 'Map Service' if ms.type==None else ms.type
-            sDescription = '' if ms.description==None else ms.description
-            sSnippet = '' if ms.snippet ==None else ms.snippet
-            sExtent = '' if ms.extent==None else ms.extent
-            sSpatialReference='' if ms.spatialReference==None else ms.spatialReference
-            sAccessInfo='' if ms.accessInformation==None else ms.accessInformation
-            sLicenseInfo='' if ms.licenseInfo==None else ms.licenseInfo
-            sCulture='' if ms.culture == None else ms.culture
+            sTags = 'mapping' if ms.tags == None else ms.tags
+            sType = 'Map Service' if ms.type == None else ms.type
+            sDescription = '' if ms.description == None else ms.description
+            sSnippet = '' if ms.snippet == None else ms.snippet
+            sExtent = '' if ms.extent == None else ms.extent
+            sSpatialReference = '' if ms.spatialReference == None else ms.spatialReference
+            sAccessInfo = '' if ms.accessInformation == None else ms.accessInformation
+            sLicenseInfo = '' if ms.licenseInfo == None else ms.licenseInfo
+            sCulture = '' if ms.culture == None else ms.culture
 
             parameters = urllib.urlencode({'URL' : sURL,
                                            'title' : sTitle,
@@ -496,20 +510,20 @@ class Admin:
             requestToAdd = self.user.portalUrl + '/sharing/rest/content/users/' + self.user.username + folder + '/addItem'
 
             try:
-                if(sType.find('Service')>=0 or sType.find('Web Mapping Application')>=0):
-                    response = urllib.urlopen(requestToAdd, parameters ).read()
+                if(sType.find('Service') >= 0 or sType.find('Web Mapping Application') >= 0):
+                    response = urllib.urlopen(requestToAdd, parameters).read()
 
                     jresult = json.loads(response)
                     print str(i) + ") " + ms.title + ": success= " + str(jresult["success"]) + "," + ms.url + ", " + "(" + jresult["id"] + ")"
 
                     if jresult["success"]:
-                        icount=icount+1
-                        ms.id=jresult["id"]
-                        ms.ownerFolder=jresult["folder"]
+                        icount = icount + 1
+                        ms.id = jresult["id"]
+                        ms.ownerFolder = jresult["folder"]
                         allresults.append(ms)
 
             except:
-                print str(i) + ") "  + ms.title + ':error!'
+                print str(i) + ") " + ms.title + ':error!'
 
         print str(icount) + " item(s) added."
         return allresults
@@ -530,7 +544,7 @@ class Admin:
         '''
         Return all folder objects.
         '''
-        requestToAdd = self.user.portalUrl + '/sharing/rest/content/users/' + self.user.username +  '?f=json&token=' + self.user.token;
+        requestToAdd = self.user.portalUrl + '/sharing/rest/content/users/' + self.user.username + '?f=json&token=' + self.user.token
         response = urllib.urlopen(requestToAdd).read()
 
         jresult = json.loads(response)        
@@ -538,16 +552,16 @@ class Admin:
 
     def randomizeToGroup(self,query,num,groupid):
 
-        catalog=self.AGOLCatalog(query)
+        catalog = self.AGOLCatalog(query)
 
         random.shuffle(catalog)
-        num=int(num)
-        gallery=[]
-        i=0
+        num = int(num)
+        gallery = []
+        i = 0
         for r in catalog:
-            i=i+1
+            i = i + 1
             gallery.append(r)
-            if i>=num:
+            if i >= num:
                 break
 
             
@@ -582,11 +596,12 @@ class Admin:
 
         #sItems=''
         #for f in groupcatalog:
-        #    sItems=sItems + f.id + "," 
+        #    sItems=sItems + f.id + ","
 
         #l=len(sItems)-1
         #sItems=sItems[:l]
-        #requestToDelete = self.user.portalUrl + '/sharing/rest/content/users/' + self.user.username + "/unshareItems"
+        #requestToDelete = self.user.portalUrl + '/sharing/rest/content/users/'
+        #+ self.user.username + "/unshareItems"
         #parameters = urllib.urlencode({
         #        'token' : self.user.token,
         #        'groups' : groupid,
@@ -598,7 +613,7 @@ class Admin:
 
         #response = urllib.urlopen(requestToDelete,parameters).read()
 
-        #jresult = json.loads(response)     
+        #jresult = json.loads(response)
 
         #print "Complete."
         return None
@@ -609,11 +624,11 @@ class Admin:
         CAUTION
         '''
         foldercatalog = self.AGOLUserCatalog(folderid)
-        sItems=''
+        sItems = ''
         for f in foldercatalog:
             sItems+= f.id + ","
 
-        if len(sItems)>0: sItems=sItems[:-1]
+        if len(sItems) > 0: sItems = sItems[:-1]
 
         requestToDelete = self.user.portalUrl + '/sharing/rest/content/users/' + self.user.username + "/deleteItems" 
 
@@ -632,7 +647,7 @@ class Admin:
         '''
         Return the catalog of items in desiginated group.
         '''
-        sCatalogURL=self.user.portalUrl + "/sharing/rest/search?q=%20group%3A" + groupid + "%20-type:%22Code%20Attachment%22%20-type:%22Featured%20Items%22%20-type:%22Symbol%20Set%22%20-type:%22Color%20Set%22%20-type:%22Windows%20Viewer%20Add%20In%22%20-type:%22Windows%20Viewer%20Configuration%22%20%20-type:%22Code%20Attachment%22%20-type:%22Featured%20Items%22%20-type:%22Symbol%20Set%22%20-type:%22Color%20Set%22%20-type:%22Windows%20Viewer%20Add%20In%22%20-type:%22Windows%20Viewer%20Configuration%22%20&num=100&sortField=title&sortOrder=asc"
+        sCatalogURL = self.user.portalUrl + "/sharing/rest/search?q=%20group%3A" + groupid + "%20-type:%22Code%20Attachment%22%20-type:%22Featured%20Items%22%20-type:%22Symbol%20Set%22%20-type:%22Color%20Set%22%20-type:%22Windows%20Viewer%20Add%20In%22%20-type:%22Windows%20Viewer%20Configuration%22%20%20-type:%22Code%20Attachment%22%20-type:%22Featured%20Items%22%20-type:%22Symbol%20Set%22%20-type:%22Color%20Set%22%20-type:%22Windows%20Viewer%20Add%20In%22%20-type:%22Windows%20Viewer%20Configuration%22%20&num=100&sortField=title&sortOrder=asc"
 
         return self.AGOLCatalog(None,None,sCatalogURL)
 
@@ -729,10 +744,10 @@ class Admin:
             itemData = json.loads(itemDataReq, object_hook=self.__decode_dict__)
                         
             #add bookmarks into object list
-            itemData['bookmarks']=pBookmarks
+            itemData['bookmarks'] = pBookmarks
 
             #convert the updated json object back to string
-            sItemDataText=json.dumps(itemData, separators=(',',':'))
+            sItemDataText = json.dumps(itemData, separators=(',',':'))
 
             #get original item definition for update
             itemInfoReq = urllib.urlopen(self.user.portalUrl + '/sharing/content/items/' + webmapId + '?' + params)
@@ -754,7 +769,7 @@ class Admin:
             else:
                 folderID = ''
 
-            nBookmarksCount=str(len(pBookmarks))
+            nBookmarksCount = str(len(pBookmarks))
             print "Updating Webmap with " + nBookmarksCount + " bookmarks..."
 
             #Post back the changes overwriting the old map
@@ -762,7 +777,7 @@ class Admin:
             
             #Evaluate the results to make sure it happened
             modResponse = json.loads(modRequest.read())
-            if modResponse["success"]!=True:
+            if modResponse["success"] != True:
                 print "The update was NOT successful."
             else:
                 print "The update WAS successful."
@@ -771,7 +786,7 @@ class Admin:
 
 
         except ValueError as e:
-            print 'Error:'+ e.message
+            print 'Error:' + e.message
 
 
         return None
@@ -780,7 +795,7 @@ class Admin:
         
         import arcpy
 
-        bmarks=[]
+        bmarks = []
         fieldnames = [labelfield,"SHAPE@"]
         wkid = "4326" 
         myCursor = arcpy.da.SearchCursor(path,fieldnames,"",wkid)
@@ -792,7 +807,7 @@ class Admin:
             bm.extent.xmax = extent.upperRight.X
             bm.extent.ymax = extent.upperRight.Y
             bm.extent.SpatialReference.wkid = wkid
-            bm.name=row[0].title()
+            bm.name = row[0].title()
 
             bmarks.append(bm.to_JSON2())
 
@@ -802,15 +817,15 @@ class Admin:
 
         import arcpy
 
-        bmarks=[]
+        bmarks = []
         try:
             
             where = '1=1'
-            fields ='*'
+            fields = '*'
 
             token = ''
             #SBTEST when to use token?
-            if(url.find("arcgis.com")>0):
+            if(url.find("arcgis.com") > 0):
                 token = self.user.token
  
             #The above variables construct the query
@@ -831,11 +846,11 @@ class Admin:
 
                 #handle points
                 if extent.lowerLeft.X == extent.upperRight.X:
-                    myX=extent.lowerLeft.X
-                    myY=extent.lowerLeft.Y 
-                    nTol=.05
-                    myLL = arcpy.Point(myX-nTol,myY-nTol)
-                    myUR = arcpy.Point(myX+nTol,myY+nTol)
+                    myX = extent.lowerLeft.X
+                    myY = extent.lowerLeft.Y 
+                    nTol = .05
+                    myLL = arcpy.Point(myX - nTol,myY - nTol)
+                    myUR = arcpy.Point(myX + nTol,myY + nTol)
 
                     bm.extent.xmin = myLL.X
                     bm.extent.ymin = myLL.Y
@@ -849,13 +864,13 @@ class Admin:
                     bm.extent.ymax = extent.upperRight.Y
 
                 bm.extent.SpatialReference.wkid = wkid
-                bm.name=row[0].title()
+                bm.name = row[0].title()
 
                 bmarks.append(bm.to_JSON2())
 
 
         except ValueError as e:
-            print 'Error: ' +e.message
+            print 'Error: ' + e.message
 
         return bmarks
 
@@ -866,34 +881,34 @@ class Admin:
             return data["bookmarks"]
     
     def getLayerURL(self, layerId):
-        sURL=None
+        sURL = None
 
         params = urllib.urlencode({'token' : self.user.token,
                             'f' : 'json'})
         #print 'Getting Info for: ' + webmapId
         #Get the item data
         
-        reqUrl = self.user.portalUrl + '/sharing/rest/content/items/' + layerId  + "?" + params
+        reqUrl = self.user.portalUrl + '/sharing/rest/content/items/' + layerId + "?" + params
         itemDataReq = urllib.urlopen(reqUrl).read()
         itemString = str(itemDataReq)
 
-        pp=json.loads(itemString)
+        pp = json.loads(itemString)
 
         sURL = pp["url"]
-        l=sURL[len(sURL)-1]
+        l = sURL[len(sURL) - 1]
         
-        if (l.isnumeric()== False):
+        if (l.isnumeric() == False):
             sURL = sURL + "/0"
 
         return sURL        
     
     def readBookmarksFromFeatureCollection(self,fcId,labelfield):
-        pBookmarks=[]
+        pBookmarks = []
 
         #    def readBookmarksFromFeatureClass(self,path,labelfield):
         #bmarks=[]
         #fieldnames = [labelfield,"SHAPE@"]
-        #wkid = "4326" 
+        #wkid = "4326"
         #myCursor = arcpy.da.SearchCursor(path,fieldnames,"",wkid)
         #for row in myCursor:
         #    bm = bookmark()
@@ -916,28 +931,28 @@ class Admin:
         itemDataReq = urllib.urlopen(reqUrl).read()
         itemString = str(itemDataReq)
 
-        pp=json.loads(itemString)
+        pp = json.loads(itemString)
         
         for f in pp["layers"][0]["featureSet"]["features"]:
             
-            x=f["geometry"]["x"];
-            y=f["geometry"]["y"];
-            bmark=bookmark()
-            bmark.extent.xmin=x-10000
-            bmark.extent.xmax=x+10000
-            bmark.extent.ymin=y-10000
-            bmark.extent.ymax=y+10000
-            bmark.name=f["attributes"][labelfield]
+            x = f["geometry"]["x"]
+            y = f["geometry"]["y"]
+            bmark = bookmark()
+            bmark.extent.xmin = x - 10000
+            bmark.extent.xmax = x + 10000
+            bmark.extent.ymin = y - 10000
+            bmark.extent.ymax = y + 10000
+            bmark.name = f["attributes"][labelfield]
 
             pBookmarks.append(bmark.to_JSON3("102100"))
 
         return pBookmarks
     def findItemsWithURLs(self, oldUrl,folder):
         
-        if(folder!=None):
+        if(folder != None):
             catalog = self.AGOLUserCatalog(folder,False)
         else:
-            catalog=self.AGOLCatalog(None)
+            catalog = self.AGOLCatalog(None)
 
         allResults = []
 
@@ -947,28 +962,28 @@ class Admin:
         oldUrl -- All or part of a URL to search for.
         newUrl -- The text that will be used to replace the current "oldUrl" text.
         '''
-        countWebMaps=0
-        countServicesOrApps=0
-        i=0
-        iLength=len(catalog)
+        countWebMaps = 0
+        countServicesOrApps = 0
+        i = 0
+        iLength = len(catalog)
         for item in catalog:
-            i=i+1
+            i = i + 1
             print str(i) + '/' + str(iLength)
             if item.type == 'Web Map':
-                v=self.findWebmapService(item.id, oldUrl)
-                if v==True:
-                    dosomething=True
-                    countWebMaps=countWebMaps+1
+                v = self.findWebmapService(item.id, oldUrl)
+                if v == True:
+                    dosomething = True
+                    countWebMaps = countWebMaps + 1
                     allResults.append(item)
             else:
                 if not item.url == None:
-                    v=self.findItemUrl(item, oldUrl)
-                    if v==True:
-                        dosomething=True
-                        countServicesOrApps=countServicesOrApps+1
+                    v = self.findItemUrl(item, oldUrl)
+                    if v == True:
+                        dosomething = True
+                        countServicesOrApps = countServicesOrApps + 1
                         allResults.append(item)
 
-        count=countServicesOrApps + countWebMaps
+        count = countServicesOrApps + countWebMaps
         return allResults
 
 
@@ -979,7 +994,7 @@ class Admin:
         sCatalogURL = self.user.portalUrl + "/sharing/rest/content/users/" + self.user.username + folder
         return self.AGOLCatalog(None,None,sCatalogURL)
 
-    def AGOLCatalog(self, query=None, includeSize=False, sCatalogURL=None, bRestrictToOrg=True):
+    def AGOLCatalog(self, query=None, includeSize=False, sCatalogURL=None, bRestrictToOrg=True,includeHistory=False):
         '''
         Return all items from all users in a portal, optionally matching a 
         specified query.
@@ -992,78 +1007,88 @@ class Admin:
         viewURL = ""
         orgID = ""
         self.sFullSearch = ""
-        self.bIncludeSize=includeSize
+        self.bIncludeSize = includeSize
+        self.bIncludeHistory = includeHistory
 
         if bRestrictToOrg:
             self.orgID = self._getOrgID()
         else:
-            self.orgID=None
+            self.orgID = None
 
-        self.catalogURL=sCatalogURL #for cataloging folders
+        self.catalogURL = sCatalogURL #for cataloging folders
 
         if self.user.portalUrl != None:
-            self.searchURL = self.user.portalUrl  + "/sharing/rest" 
-            self.viewURL = self.user.portalUrl  + "/home/item.html?id="
+            self.searchURL = self.user.portalUrl + "/sharing/rest" 
+            self.viewURL = self.user.portalUrl + "/home/item.html?id="
+            self.historyURL = self.searchURL + "/portals/self/history"
 
-        query=str(query).replace('&quot','"')
+        query = str(query).replace('&quot','"')
         self.query = query
 
-        pList=[]
+        pList = []
         allResults = []
 
-        sQuery=self._getCatalogQuery(1,100)#get first batch
+        sQuery = self._getCatalogQuery(1,100)#get first batch
 
         print("fetching records 1-100...")
 
         response = urllib.urlopen(sQuery).read()
-        jresult=json.loads(response)
+        jresult = json.loads(response)
 
         nextRecord = jresult['nextStart']
         totalRecords = jresult['total']
         num = jresult['num']
-        start =jresult['start']
+        start = jresult['start']
 
         #if this is a folder catalog, use items, not results
         sItemsProperty = 'results'
-        if self.catalogURL!=None and str(self.catalogURL).find("/sharing/rest/content/users/")>0: sItemsProperty='items'
+        if self.catalogURL != None and str(self.catalogURL).find("/sharing/rest/content/users/") > 0: sItemsProperty = 'items'
 
-        pList = AGOLItems( jresult[sItemsProperty])
+        pList = AGOLItems(jresult[sItemsProperty])
 
         for r in pList.AGOLItems_list:
             r.itemURL = self.viewURL + r.id
-            r.created = time.strftime("%Y-%m-%d",time.gmtime(r.created/1000))
-            r.modified = time.strftime("%Y-%m-%d",time.gmtime(r.modified/1000))
-            if r.size== -1:
-                r.size=0
+            r.created = time.strftime("%Y-%m-%d",time.gmtime(r.created / 1000))
+            r.modified = time.strftime("%Y-%m-%d",time.gmtime(r.modified / 1000))
+            if r.size == -1:
+                r.size = 0
             r.size = self._getSize(r)
             
+            h = self._getHistory(r)
+            r.history = h['history']
+            r.previousCreator = h['previousCreator']
+
             r.thumbnailUrl = self._fixThumbnail(r)
 
-            r.myRowID = len(allResults) + 1;
+            r.myRowID = len(allResults) + 1
             allResults.append(r)
 
-        if (nextRecord>0):
-            while(nextRecord>0):
+        if (nextRecord > 0):
+            while(nextRecord > 0):
                 sQuery = self._getCatalogQuery(nextRecord, 100)
-                print("fetching records " + str(nextRecord) + "-" + str(nextRecord+100) + "...")
+                print("fetching records " + str(nextRecord) + "-" + str(nextRecord + 100) + "...")
 
                 response = urllib.urlopen(sQuery).read()
-                jresult=json.loads(response)
+                jresult = json.loads(response)
 
                 nextRecord = jresult['nextStart']
                 totalRecords = jresult['total']
                 num = jresult['num']
-                start =jresult['start']
+                start = jresult['start']
 
-                pList = AGOLItems( jresult[sItemsProperty])
+                pList = AGOLItems(jresult[sItemsProperty])
                 for r in pList.AGOLItems_list:
                     r.itemURL = self.viewURL + r.id
-                    r.created = time.strftime("%Y-%m-%d",time.gmtime(r.created/1000))
-                    r.modified = time.strftime("%Y-%m-%d",time.gmtime(r.modified/1000))
-                    if r.size== -1:
-                        r.size=0
+                    r.created = time.strftime("%Y-%m-%d",time.gmtime(r.created / 1000))
+                    r.modified = time.strftime("%Y-%m-%d",time.gmtime(r.modified / 1000))
+                    if r.size == -1:
+                        r.size = 0
                         r.size = self._getSize(r)
-                    r.myRowID = len(allResults) + 1;
+                    r.myRowID = len(allResults) + 1
+
+                    h = self._getHistory(r)
+                    r.history = h['history']
+                    r.previousCreator = h['previousCreator']
                     r.thumbnailUrl = self._fixThumbnail(r)
                     allResults.append(r)
 
@@ -1076,17 +1101,52 @@ class Admin:
         #+/id
         #+/info/thumbnail/
         #+thumbnail
-        if(r==None):
+        if(r == None):
           return ''
 
-        r2=''
+        r2 = ''
         
         if(r.id and r.thumbnail):
-          r2=self.user.portalUrl + "/sharing/rest/content/items/" + r.id + "/info/" + r.thumbnail
+          r2 = self.user.portalUrl + "/sharing/rest/content/items/" + r.id + "/info/" + r.thumbnail
         #SBTEST r2=r2 + "?token=" + self.user.token
 
          
         return r2
+
+    def _getHistory(self,r):
+
+        try:
+          if(self.bIncludeHistory != True):
+              return 0
+
+          
+          if(r.title and r.type):
+            print ("now fetching history for " + r.title + " (" + r.type + ")")
+
+          result = 0
+          sURL = self.historyURL + "?ID=" + str(r.id) + "&All=true&f=json&token=" + self.user.token
+
+          response = urllib.urlopen(sURL).read()
+          result = json.loads(response)['items']
+            
+          previousCreator = ''
+
+          for r in result:
+              if r['action'] == "add":
+                  previousCreator =  r['actor']
+
+          r2 = {}
+          r2["previousCreator"] = previousCreator
+          r2["history"] = result
+
+          return r2
+
+        except Exception as e:
+          print("_getHistory error: " + e.message)
+          return 0
+
+
+        return 0
 
     def _getSize(self, r):
         '''
@@ -1099,15 +1159,15 @@ class Admin:
           if(r.title and r.type):
             print ("now fetching size for " + r.title + " (" + r.type + ")")
 
-          result=0
-          sURL = self.searchURL + "/content/items/" + str(r.id) + "?f=json&token=" + self.user.token;
+          result = 0
+          sURL = self.searchURL + "/content/items/" + str(r.id) + "?f=json&token=" + self.user.token
 
           response = urllib.urlopen(sURL).read()
           result = json.loads(response)['size']
-          if(result>0):
-              result = result/1024
+          if(result > 0):
+              result = result / 1024
           else:
-              result=0
+              result = 0
 
           return result
 
@@ -1126,22 +1186,22 @@ class Admin:
         parameters = urllib.urlencode({'token' : self.user.token, 'f': 'json'})
         requestForInfo = self.user.portalUrl + '/sharing/rest/content/items/' + v.id
  
-        response = urllib.urlopen(requestForInfo, parameters ).read()
+        response = urllib.urlopen(requestForInfo, parameters).read()
 
         jResult = json.loads(response)
 
         if('error' in jResult):
-            print str(i)  + ') ' + v.title + " (" + v.id + ") was not found and will be skipped." 
+            print str(i) + ') ' + v.title + " (" + v.id + ") was not found and will be skipped." 
         else:
             if jResult['ownerFolder']:
                 folderID = jResult['ownerFolder']
             else:
                 folderID = ''
-        sUser=v.owner
-        sUser=self.user.username
+        sUser = v.owner
+        sUser = self.user.username
 
         requestForInfo2 = self.user.portalUrl + '/sharing/rest/content/users/' + sUser + '/' + folderID + '/items/' + v.id 
-        response2 = urllib.urlopen(requestForInfo2, parameters ).read()
+        response2 = urllib.urlopen(requestForInfo2, parameters).read()
         jResult2 = json.loads(response2)
 
         return jResult2["sharing"]["groups"]
@@ -1161,34 +1221,34 @@ class Admin:
         '''
         Format a content query from specified start and number of records.
         '''
-        sQuery=None
+        sQuery = None
         if self.query != None:
             sQuery = self.query
         else:
             sQuery = self.sFullSearch
 
-        if(self.catalogURL==None):
+        if(self.catalogURL == None):
             sCatalogQuery = self.searchURL + "/search?q=" + sQuery
             if self.orgID != None:
                 sCatalogQuery += " orgid:" + self.orgID
         else:
-            #check to ensure ? vs &
-            if(str(self.catalogURL).find('?')<0):
-                char="?"
+            #check to ensure ?  vs &
+            if(str(self.catalogURL).find('?') < 0):
+                char = "?"
             else:
-                char="&"
+                char = "&"
 
             sCatalogQuery = self.catalogURL + char + "ts=1" 
 
-        sCatalogQuery += "&f=json&num="+ str(num) + "&start=" + str(start)
+        sCatalogQuery += "&f=json&num=" + str(num) + "&start=" + str(start)
         sCatalogQuery += "&token=" + self.user.token
 
         return sCatalogQuery
 
     def updateUserRoles(self, users):
-        self.usersToUpdate=users
+        self.usersToUpdate = users
 
-        requestToUpdate= self.user.portalUrl + '/sharing/rest/portals/self/updateuserrole'
+        requestToUpdate = self.user.portalUrl + '/sharing/rest/portals/self/updateuserrole'
 
         for u in self.usersToUpdate.user_list:
             parameters = urllib.urlencode({'user':u.Username,
@@ -1199,7 +1259,7 @@ class Admin:
             print "Updating Role for " + u.Username + " to " + u.Role + "..."
             response = urllib.urlopen(requestToUpdate,parameters).read()
             jresult = json.loads(response)     
-            success= str(jresult["success"])
+            success = str(jresult["success"])
             print "Success: " + success
 
         print "Complete."
@@ -1208,8 +1268,8 @@ class Admin:
     
 #collection of AGOLItem
 class AGOLItems:
-    def __init__ (self, item_list):
-        self.AGOLItems_list=[]
+    def __init__(self, item_list):
+        self.AGOLItems_list = []
         for item in item_list:
             self.AGOLItems_list.append(AGOLItem(item))
 
@@ -1221,8 +1281,8 @@ class AGOLItem:
 
 #collection of Map Services
 class MapServices:
-    def __init__ (self, import_list):
-        self.service_list=[]
+    def __init__(self, import_list):
+        self.service_list = []
         for service in import_list:
             self.service_list.append(MapService(service))
 
@@ -1234,8 +1294,8 @@ class MapService:
 
 #Collection of Usernames and roles
 class UsersAttributes:
-    def __init__ (self, import_list):
-        self.user_list=[]
+    def __init__(self, import_list):
+        self.user_list = []
         for user in import_list:
             self.user_list.append(UserAttributes(user))
 
@@ -1263,8 +1323,9 @@ class bookmark(object):
                 #bm.extent.ymax = extent.upperRight.Y
                 #bm.extent.SpatialReference.wkid = wkid
                 #bm.name=row[0].title()
-        #s='{"extent":{"SpatialReference":{"wkid":"4326"},"xmax":-77.58890542503474,"xmin":-77.66083839947551,"ymax":42.58041413631198,"ymin":42.549020481314585},"name":"Wayland 200"}'#.format(self.extent.xmin,self.extent.xmax,self.extent.ymin,self.extent.ymax,self.name)
-        s='{"extent":{"SpatialReference":{"wkid":"4326"},"xmax":' + str(self.extent.xmax) +',"xmin":' + str(self.extent.xmin) + ',"ymax":' + str(self.extent.ymax) +',"ymin":' + str(self.extent.ymin) + '},"name":"' + self.name + '"}'
+        #s='{"extent":{"SpatialReference":{"wkid":"4326"},"xmax":-77.58890542503474,"xmin":-77.66083839947551,"ymax":42.58041413631198,"ymin":42.549020481314585},"name":"Wayland
+        #200"}'#.format(self.extent.xmin,self.extent.xmax,self.extent.ymin,self.extent.ymax,self.name)
+        s = '{"extent":{"SpatialReference":{"wkid":"4326"},"xmax":' + str(self.extent.xmax) + ',"xmin":' + str(self.extent.xmin) + ',"ymax":' + str(self.extent.ymax) + ',"ymin":' + str(self.extent.ymin) + '},"name":"' + self.name + '"}'
         #.format(self.extent.xmin,self.extent.xmax,self.extent.ymin,self.extent.ymax,self.name)
         
         return json.loads(s)
@@ -1277,9 +1338,13 @@ class bookmark(object):
                 #bm.extent.ymax = extent.upperRight.Y
                 #bm.extent.SpatialReference.wkid = wkid
                 #bm.name=row[0].title()
-        #s='{"extent":{"SpatialReference":{"wkid":"4326"},"xmax":-77.58890542503474,"xmin":-77.66083839947551,"ymax":42.58041413631198,"ymin":42.549020481314585},"name":"Wayland 200"}'#.format(self.extent.xmin,self.extent.xmax,self.extent.ymin,self.extent.ymax,self.name)
-        #SBTEST s='{"extent":{"SpatialReference":{"wkid":'  + wkid  +  '},"xmax":' + str(self.extent.xmax) +',"xmin":' + str(self.extent.xmin) + ',"ymax":' + str(self.extent.ymax) +',"ymin":' + str(self.extent.ymin) + '},"name":"' + self.name + '"}'
-        s='{"extent":{"SpatialReference":{"wkid":'  + wkid  +  '},"xmin":' + str(self.extent.xmin) +',"ymin":' + str(self.extent.ymin) + ',"xmax":' + str(self.extent.xmax) +',"ymax":' + str(self.extent.ymax) + '},"name":"' + self.name + '"}'
+        #s='{"extent":{"SpatialReference":{"wkid":"4326"},"xmax":-77.58890542503474,"xmin":-77.66083839947551,"ymax":42.58041413631198,"ymin":42.549020481314585},"name":"Wayland
+        #200"}'#.format(self.extent.xmin,self.extent.xmax,self.extent.ymin,self.extent.ymax,self.name)
+        #SBTEST s='{"extent":{"SpatialReference":{"wkid":' + wkid + '},"xmax":'
+        #+ str(self.extent.xmax) +',"xmin":' + str(self.extent.xmin) +
+        #',"ymax":' + str(self.extent.ymax) +',"ymin":' + str(self.extent.ymin)
+        #+ '},"name":"' + self.name + '"}'
+        s = '{"extent":{"SpatialReference":{"wkid":' + wkid + '},"xmin":' + str(self.extent.xmin) + ',"ymin":' + str(self.extent.ymin) + ',"xmax":' + str(self.extent.xmax) + ',"ymax":' + str(self.extent.ymax) + '},"name":"' + self.name + '"}'
         
         #.format(self.extent.xmin,self.extent.xmax,self.extent.ymin,self.extent.ymax,self.name)
         
